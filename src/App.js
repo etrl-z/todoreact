@@ -1,9 +1,10 @@
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import ToDoElement from "./ToDoElement";
 import "./todoStyle.css";
 import "./bootstrap/css/bootstrap.min.css";
 import { db } from "./firebaseConfiguration";
 import { useCollection } from "react-firebase-hooks/firestore";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
   collection,
   doc,
@@ -18,7 +19,7 @@ import {
 
 export default function App() {
   const [todosSnapshot] = useCollection(
-    query(collection(db, "todos"), orderBy("timestamp", "asc"))
+    query(collection(db, "todos"), orderBy("order", "asc"))
   );
 
   //receives ID and changes prop of a checked task
@@ -46,6 +47,7 @@ export default function App() {
       name: newTask.length > 30 ? newTask.substring(0, 26) + "..." : newTask,
       timestamp: Timestamp.fromDate(new Date()),
       completed: false,
+      order: todosSnapshot?.docs.length || 0
     });
     inputRef.current.value = null; //resets input field
   }
@@ -75,21 +77,69 @@ export default function App() {
     };
   });
 
+  // Drag n drop handler
+  const handleOnDragEnd = (result) => {
+    if (!result.destination) return;
+    const reordered = Array.from(todosSnapshot.docs);
+    const [movedItem] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, movedItem);
+
+    // Update order
+    reordered.forEach((docSnap, index) => {
+      setDoc(doc(db, "todos", docSnap.id), { order: index }, { merge: true });
+    });
+  };
+
   return (
     <>
       <div class="container-box">
         <div class="header">
           <div class="list">
-            {todosSnapshot?.docs.map((todoEl) => (
+
+            {/* OLD */}
+            {/* {todosSnapshot?.docs.map((todoEl) => (
               <ToDoElement
                 key={todoEl.id}
                 id={todoEl.id}
                 todo={todoEl.data()}
                 toggleTodos={toggleTodos}
               />
-            ))}
+            ))} */}
+
+            {/* NEW */}
+            <DragDropContext onDragEnd={handleOnDragEnd}>
+              <Droppable droppableId="todos">
+                {(provided) => (
+                  <div
+                    className="list"
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                  >
+                    {todosSnapshot?.docs.map((todoEl, index) => (
+                      <Draggable key={todoEl.id} draggableId={todoEl.id} index={index}>
+                        {(provided) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                          >
+                            <ToDoElement
+                              id={todoEl.id}
+                              todo={todoEl.data()}
+                              toggleTodos={toggleTodos}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </div>
         </div>
+
         <div class="features">
           <div class="row1">
             <input

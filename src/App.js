@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import ToDoElement from "./ToDoElement";
 import "./todoStyle.css";
 import "./bootstrap/css/bootstrap.min.css";
@@ -15,6 +15,7 @@ import {
   addDoc,
   setDoc,
   deleteDoc,
+  updateDoc,
 } from "firebase/firestore";
 
 export default function App() {
@@ -22,23 +23,41 @@ export default function App() {
     query(collection(db, "todos"), orderBy("order", "asc"))
   );
 
-  //receives ID and changes prop of a checked task
+  // Local list to avoid Firestore snapshot re-render glitch during drag
+  const [localTodos, setLocalTodos] = useState([]);
+
+  useEffect(() => {
+    if (todosSnapshot) {
+      setLocalTodos(todosSnapshot.docs);
+    }
+  }, [todosSnapshot]);
+
+  // Delete single task
+  function handleDelete(id) {
+    deleteDoc(doc(db, "todos", id));
+  }
+
+  // Receives ID and changes prop of a checked task
   function toggleTodos(id) {
-    const checkedTask = todosSnapshot?.docs.find((task) => task.id === id);
-    //Update completed on DB
+    const checkedTask = localTodos?.find((task) => task.id === id);
     const checkedTaskRef = doc(db, "todos", id);
     setDoc(
       checkedTaskRef,
       {
-        completed: !checkedTask.data().completed,
+        completed: !checkedTask?.data()?.completed,
       },
       { merge: true }
     );
   }
 
+  // DELETE TASK
+  function handleDelete(id) {
+    deleteDoc(doc(db, "todos", id));
+  }
+
   const inputRef = useRef();
 
-  //ADD TASK
+  // ADD TASK
   function handleAdd() {
     const newTask = inputRef.current.value;
     if (newTask === "") return;
@@ -47,23 +66,23 @@ export default function App() {
       name: newTask,
       timestamp: Timestamp.fromDate(new Date()),
       completed: false,
-      order: todosSnapshot?.docs.length || 0
+      order: localTodos?.length || 0,
     });
-    inputRef.current.value = null; //resets input field
+    inputRef.current.value = null;
   }
 
   const [todosCompletedSnapshot] = useCollection(
     query(collection(db, "todos"), where("completed", "==", true))
   );
 
-  //CLEAR COMPLETED
+  // CLEAR COMPLETED
   function handleClear() {
-    todosCompletedSnapshot.docs.forEach((task) => {
+    todosCompletedSnapshot?.docs?.forEach((task) => {
       deleteDoc(doc(db, "todos", task.id));
     });
   }
 
-  //call add function when Enter is pressed
+  // Call add function when Enter is pressed
   useEffect(() => {
     const listener = (event) => {
       if (event.code === "Enter" || event.code === "NumpadEnter") {
@@ -71,42 +90,35 @@ export default function App() {
         handleAdd();
       }
     };
-    document.addEventListener("keydown", listener); //when component is loaded
+    document.addEventListener("keydown", listener);
     return () => {
-      document.removeEventListener("keydown", listener); //destroys the component
+      document.removeEventListener("keydown", listener);
     };
   });
 
-  // Drag n drop handler
-  const handleOnDragEnd = (result) => {
-    if (!result.destination) return;
-    const reordered = Array.from(todosSnapshot.docs);
+  // Drag n drop handler using local state (optimistic UI)
+  const handleOnDragEnd = useCallback((result) => {
+    if (!result.destination || !localTodos) return;
+    const reordered = Array.from(localTodos);
     const [movedItem] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, movedItem);
 
-    // Update order
+    // Update local state immediately for smooth animation
+    setLocalTodos(reordered);
+
+    // Persist to DB
     reordered.forEach((docSnap, index) => {
       setDoc(doc(db, "todos", docSnap.id), { order: index }, { merge: true });
     });
-  };
+  }, [localTodos]);
+
+  const todosToRender = localTodos || [];
 
   return (
     <>
-      <div class="container-box">
-        <div class="header">
-          <div class="list">
-
-            {/* OLD */}
-            {/* {todosSnapshot?.docs.map((todoEl) => (
-              <ToDoElement
-                key={todoEl.id}
-                id={todoEl.id}
-                todo={todoEl.data()}
-                toggleTodos={toggleTodos}
-              />
-            ))} */}
-
-            {/* NEW */}
+      <div className="container-box">
+        <div className="header">
+          <div className="list">
             <DragDropContext onDragEnd={handleOnDragEnd}>
               <Droppable droppableId="todos">
                 {(provided) => (
@@ -115,10 +127,15 @@ export default function App() {
                     {...provided.droppableProps}
                     ref={provided.innerRef}
                   >
-                    {todosSnapshot?.docs.map((todoEl, index) => (
-                      <Draggable key={todoEl.id} draggableId={todoEl.id} index={index}>
+                    {todosToRender.map((todoEl, index) => (
+                      <Draggable
+                        key={todoEl.id}
+                        draggableId={todoEl.id}
+                        index={index}
+                      >
                         {(provided) => (
                           <div
+                            key={todoEl.id}
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
@@ -127,6 +144,7 @@ export default function App() {
                               id={todoEl.id}
                               todo={todoEl.data()}
                               toggleTodos={toggleTodos}
+                              onDelete={handleDelete}
                             />
                           </div>
                         )}
@@ -140,31 +158,29 @@ export default function App() {
           </div>
         </div>
 
-        <div class="features">
-          <div class="row1">
+        <div className="features">
+          <div className="row1">
             <input
-              class="input"
+              className="input"
               ref={inputRef}
               type="text"
               placeholder="Add your next Task..."
             />
           </div>
-          <div class="row2">
-            <p class="button button-add" onClick={handleAdd}>
+          <div className="row2">
+            <p className="button button-add" onClick={handleAdd}>
               <strong>ADD NEW</strong>
             </p>
-            <p class="button button-clear" onClick={handleClear}>
+            <p className="button button-clear" onClick={handleClear}>
               <strong>CLEAR</strong>
             </p>
           </div>
-          <div class="row3">
-            <div class="text-bottom">
+          <div className="row3">
+            <div className="text-bottom">
               YOU HAVE{" "}
               <strong>
-                {
-                  todosSnapshot?.docs.filter((todo) => !todo.data().completed)
-                    .length
-                }
+                {todosToRender.filter((todo) => !todo.data().completed)
+                  .length}
               </strong>{" "}
               TASKS LEFT TO DO!
             </div>

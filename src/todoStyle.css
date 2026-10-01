@@ -79,7 +79,7 @@ body {
 .list-item .copy-btn {
   opacity: 0;
   transition: opacity 0.2s ease;
-  margin-left: auto;
+  margin-left: 4px;
   padding: 4px 8px;
   font-size: 1rem;
   background: transparent;

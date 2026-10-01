@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { Fragment, useRef, useEffect, useState, useCallback } from "react";
 import ToDoElement from "./ToDoElement";
 import "./todoStyle.css";
 import "./bootstrap/css/bootstrap.min.css";
@@ -14,8 +14,7 @@ import {
   Timestamp,
   addDoc,
   setDoc,
-  deleteDoc,
-  updateDoc,
+  deleteDoc
 } from "firebase/firestore";
 
 export default function App() {
@@ -114,6 +113,15 @@ export default function App() {
 
   const todosToRender = localTodos || [];
 
+  const handleAddSection = (index) => {
+    addDoc(collection(db, "todos"), {
+      name: "__SECTION__",
+      timestamp: Timestamp.fromDate(new Date()),
+      completed: false,
+      order: index + 0.5,
+    });
+  };
+
   return (
     <>
       <div className="container-box">
@@ -128,27 +136,28 @@ export default function App() {
                     ref={provided.innerRef}
                   >
                     {todosToRender.map((todoEl, index) => (
-                      <Draggable
-                        key={todoEl.id}
-                        draggableId={todoEl.id}
-                        index={index}
-                      >
-                        {(provided) => (
-                          <div
-                            key={todoEl.id}
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                          >
-                            <ToDoElement
-                              id={todoEl.id}
-                              todo={todoEl.data()}
-                              toggleTodos={toggleTodos}
-                              onDelete={handleDelete}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
+                        <Draggable
+                          key={todoEl.id}
+                          draggableId={todoEl.id}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              key={todoEl.id}
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <ToDoElement
+                                id={todoEl.id}
+                                todo={todoEl.data()}
+                                toggleTodos={toggleTodos}
+                                onDelete={handleDelete}
+                                onAddSection={() => handleAddSection(index)}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
                     ))}
                     {provided.placeholder}
                   </div>

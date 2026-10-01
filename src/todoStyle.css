@@ -133,6 +133,58 @@ body {
   transition: all 0.5s ease;
 }
 
+.add-section-btn {
+  opacity: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px dashed var(--grey-light);
+  background: transparent;
+  color: var(--grey-full);
+  font-weight: bold;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.list-item:hover .add-section-btn {
+  opacity: 0.6;
+}
+
+.add-section-btn:hover {
+  opacity: 1 !important;
+  border-color: var(--green-full);
+  color: var(--green-full);
+  transform: scale(1.1);
+}
+
+.section-item {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.5rem;
+  margin: 0.4rem 0;
+  border-radius: 8px;
+  border-left: 4px solid var(--green-full);
+  background: #f1f8f4;
+  justify-content: space-between;
+  transition: background-color 0.2s ease;
+}
+
+.section-item:hover {
+  background-color: #e0ebe5;
+}
+
+.section-label {
+  font-weight: 600;
+  color: var(--green-full);
+  font-size: 1rem;
+  font-style: italic;
+}
 .circle {
   width: 12px;
   height: 12px;

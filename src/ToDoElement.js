@@ -15,12 +15,12 @@ function SectionItem({ todo, id, onDelete, toggleTodos }) {
   const [isCopied, setIsCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newText, setNewText] = useState(
-    todo.name.replace("__SECTION__:", "")
+    (todo?.name || "").replace("__SECTION__:", "")
   );
 
   function handleCopy(e) {
     e.stopPropagation();
-    navigator.clipboard.writeText(todo.name.replace("__SECTION__:", ""));
+    navigator.clipboard.writeText((todo?.name || "").replace("__SECTION__:", ""));
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 1500);
   }
@@ -55,7 +55,7 @@ function SectionItem({ todo, id, onDelete, toggleTodos }) {
         />
       ) : (
         <>
-          <span className="section-label">{todo.name === "__SECTION__" ? "— new section —" : todo.name.replace("__SECTION__:", "")}</span>
+          <span className="section-label">{(todo?.name === "__SECTION__") ? "— new section —" : (todo?.name || "").replace("__SECTION__:", "")}</span>
           <div className="actions">
             <button onClick={handleCopy} className={`action-btn ${isCopied ? "copy-btn copied" : ""}`} title="Copy section name" aria-label="Copy section name">📋</button>
             <button onClick={handleEdit} className="action-btn edit-btn" title="Edit section" aria-label="Edit section">✏️</button>
@@ -70,7 +70,7 @@ function SectionItem({ todo, id, onDelete, toggleTodos }) {
 function ToDoElement({ todo, id, toggleTodos, onDelete, onAddSection }) {
   const [isCopied, setIsCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [newText, setNewText] = useState(todo.name);
+  const [newText, setNewText] = useState(todo?.name || "");
 
   function handleToDoClick() {
     if (!isEditing) toggleTodos(id);
@@ -102,10 +102,10 @@ function ToDoElement({ todo, id, toggleTodos, onDelete, onAddSection }) {
     }
   }
 
-  const displayName = todo.name.length > 100 ? todo.name.substring(0, 100) + "..." : todo.name;
+  const displayName = todo && todo.name ? (todo.name.length > 100 ? todo.name.substring(0, 100) + "..." : todo.name) : "";
 
   // If it's a section
-  if (todo.name.startsWith("__SECTION__")) {
+  if (todo && todo.name && todo.name.startsWith("__SECTION__")) {
     return <SectionItem id={id} todo={todo} onDelete={onDelete} toggleTodos={toggleTodos} />;
   }
 

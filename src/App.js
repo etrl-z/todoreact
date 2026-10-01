@@ -1,4 +1,4 @@
-import { Fragment, useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import ToDoElement from "./ToDoElement";
 import "./todoStyle.css";
 import "./bootstrap/css/bootstrap.min.css";
@@ -47,11 +47,6 @@ export default function App() {
       },
       { merge: true }
     );
-  }
-
-  // DELETE TASK
-  function handleDelete(id) {
-    deleteDoc(doc(db, "todos", id));
   }
 
   const inputRef = useRef();
@@ -188,7 +183,7 @@ export default function App() {
             <div className="text-bottom">
               YOU HAVE{" "}
               <strong>
-                {todosToRender.filter((todo) => !todo.data().completed)
+                {todosToRender.filter((todo) => todo && todo.data() && !todo.data().completed)
                   .length}
               </strong>{" "}
               TASKS LEFT TO DO!

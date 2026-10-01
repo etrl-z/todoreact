@@ -4,6 +4,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "./firebaseConfiguration";
 
 function ToDoElement({ todo, id, toggleTodos, onDelete }) {
+  const [isCopied, setIsCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newText, setNewText] = useState(todo.name);
 
@@ -14,6 +15,9 @@ function ToDoElement({ todo, id, toggleTodos, onDelete }) {
   function handleCopy(e) {
     e.stopPropagation();
     navigator.clipboard.writeText(todo.name);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 1500);
+    e.currentTarget.blur(); // ensure button gets focus so copied style applies immediately
   }
 
   function handleDeleteTask(e) {
@@ -55,9 +59,11 @@ function ToDoElement({ todo, id, toggleTodos, onDelete }) {
           <label className={`task-label ${todo.completed ? "completed-label" : ""}`} title={todo.name}>
             {displayName}
           </label>
-          <button onClick={handleCopy} className="copy-btn" title="Copy task name" aria-label="Copy task name">📋</button>
-          <button onClick={handleEdit} className="copy-btn" title="Edit task" aria-label="Edit task" style={{ color: "#3498db" }}>✏️</button>
-          <button onClick={handleDeleteTask} className="copy-btn" title="Delete task" aria-label="Delete task" style={{ color: "#e74c3c" }}>🗑️</button>
+          <div className="actions">
+            <button onClick={handleCopy} className={`action-btn ${isCopied ? "copy-btn copied" : ""}`} title="Copy task name" aria-label="Copy task name">📋</button>
+            <button onClick={handleEdit} className="action-btn edit-btn" title="Edit task" aria-label="Edit task">✏️</button>
+            <button onClick={handleDeleteTask} className="action-btn delete-btn" title="Delete task" aria-label="Delete task">🗑️</button>
+          </div>
         </>
       )}
     </div>

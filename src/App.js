@@ -44,7 +44,7 @@ export default function App() {
     if (newTask === "") return;
     const todosColRef = collection(db, "todos");
     addDoc(todosColRef, {
-      name: newTask.length > 30 ? newTask.substring(0, 26) + "..." : newTask,
+      name: newTask,
       timestamp: Timestamp.fromDate(new Date()),
       completed: false,
       order: todosSnapshot?.docs.length || 0
